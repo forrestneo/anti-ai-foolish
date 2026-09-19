@@ -6,3 +6,6 @@ skills/anti-ai-foolish/references/用户文章诊断.md
 .mimosa/
 __pycache__/
 *.pyc
+
+# market catalog
+.DS_Store

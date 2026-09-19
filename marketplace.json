@@ -1,0 +1,15 @@
+{
+  "name": "anti-ai-foolish-market",
+  "plugins": [
+    {
+      "name": "anti-ai-foolish",
+      "source": "./anti-ai-foolish-plugin",
+      "version": "3.2.0",
+      "description": "De-AI gatekeeper validated on 52 Zhuque-labeled fragments",
+      "displayName": "anti-ai-foolish",
+      "displayName_i18n": {"zh-CN": "anti-ai-foolish（反AI傻味·去AI终检）"},
+      "description_i18n": {"zh-CN": "1108条规则经52片段朱雀实测语料A/B验证，四步工作流：机械筛→骨架检查→七刀手术→复检。"},
+      "category": "productivity"
+    }
+  ]
+}
