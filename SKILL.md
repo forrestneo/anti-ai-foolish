@@ -30,7 +30,11 @@ Read the output:
 - **Gates failed → ❌ 停下手术**. Go to Step 3.
 - Z-score = confirmed-AI-rule hits − confirmed-human-rule hits. Positive means AI-side.
 
-The six hard gates: 冒号=0, 破折号=0, 直引号=0, 概念引用腔≤3/千字, 疑问句≤3/千字, 无小节标题. For the full-rule report with per-hit fixes, run `python scripts/scanner.py <article.md>`.
+The hard gates (six mechanical + one in-document skeleton-ratio gate): 冒号=0, 破折号=0, 直引号=0, 概念引用腔≤3/千字, 疑问句≤3/千字, 无小节标题. For the full-rule report with per-hit fixes, run `python scripts/scanner.py <article.md>`.
+
+### Step 1.5 — Skeleton gate (mechanical, inside preflight)
+
+Preflight's 8th gate splits the body into ~1,200-char blocks and compares each block's argument-metrics (concept-word + 所以 density + self-QA) against its lived-experience metrics. A block ≥800 chars with argument ≥5/千字 and lived-experience ≤2/千字 is a **concept-skeleton block**: punctuation surgery cannot save it (field-proven: a block that passed all six mechanical gates still scored 0.63 on Zhuque, while its lived-experience sibling block scored 0.40). When this gate fires, the fix is Step 3 knife 7 (换骨架 — hang facts on people and events), never more polishing.
 
 ### Step 2 — Human judgment (regex cannot do these three)
 
