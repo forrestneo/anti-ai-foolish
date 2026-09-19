@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""scanner.py —— 去AI-Harness 规则引擎。
+"""scanner.py —— anti-ai-foolish 规则引擎。
 用法:
-  python engine/scanner.py <文本.md/txt> [--json out.json] [--no-exempt]
+  python scripts/scanner.py <文本.md/txt> [--json out.json] [--no-exempt]
 加载 rules/ 全部分库 → 剥信源备注 → 应用豁免 → 逐条扫描 → 报告（按severity分层，含fix建议）。
 输出 Z分（确认AI规则命中 − 确认人味规则命中）。"""
 import os, re, io, json, sys

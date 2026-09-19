@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""validation/abtest.py —— 全量规则在52片段朱雀语料上的A/B验证，回写 status 到规则库。
+"""scripts/abtest.py —— 全量规则在52片段朱雀语料上的A/B验证，回写 status 到规则库。
 判定：confirmed（CI不含0且|d|≥0.10）/ reversed（人味方向过CI）/ no_signal / insufficient（触发<5）。
 meta与豁免规则不参与。结果存 validation/results/abtest_results.json 并更新 rules/*.json。"""
 import os, re, io, json, sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(HERE, 'engine'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from scanner import load_rules, kilo
 
 corpus = [c for c in json.load(io.open(os.path.join(HERE, 'validation', 'corpus', 'zhuque_corpus.json'), encoding='utf-8')) if c['text'] and len(c['text']) > 200]

@@ -1,83 +1,92 @@
 ---
 name: anti-ai-foolish
-version: 3.2.0
-description: 究极去AI味终检（validated版）。1108条规则经52片段朱雀实测语料A/B验证（confirmed 8/reversed 10），端到端与朱雀实测对齐（0.91/0.93未手术稿正确拦截、手术后稿放行）。四步工作流：preflight机械筛→人工判据→七刀手术→复检判定。触发词：去AI味、终检、发文前检查、降AI、AI味、朱雀、微信打回、AI率。
+description: Pre-publish AI-flavor gatekeeper for Chinese long-form articles (公众号/自媒体评论). Detects and removes AI-writing tells using 1,108 rules that were A/B-validated on 52 real Tencent Zhuque detector-labeled fragments. Use whenever the user asks to 去AI味, 去AI, 降AI率, 终检/检查一篇文章 before publishing, or mentions an article was flagged or rejected by WeChat (微信打回) or Zhuque (朱雀) as AI-generated — even if they only say "这篇文章帮我看看".
 ---
 
-# anti-ai-foolish v3.2 —— 经验证的究极去AI味终检
+# anti-ai-foolish — 去AI味终检
 
-> 自包含：本skill自带规则库（rules/，1108条、每条带验证状态与证据）、引擎（engine/scanner.py）、发文管线（pipelines/preflight.py）。阈值全部来自实测，出处见各规则 evidence 字段与 references/方法论与证据链.md。
+Publishing gatekeeper for Chinese articles. It answers one question: **is this draft safe to publish, or does it still read as AI-generated?** It decides with mechanical gates (punctuation, quoting habits, question density, a validated Z-score) plus three human-judgment checks that regex cannot see.
 
-## 快速用法
+Everything here is evidence-backed: the 1,108 rules were A/B-tested against 52 fragments with real Zhuque detector labels (95% CI). Rules that failed testing are marked as such — see `rules/INDEX.json` and `references/评测报告.md`.
+
+## When to use
+
+- User wants a draft checked before publishing (终检 / 发文前检查).
+- User says a draft "太AI了", was flagged by WeChat, or scored high on a detector.
+- User wants an AI-flavored draft rewritten/surgically repaired (七刀手术).
+
+**Do not use** for: fiction/web-novel dialogue polishing (different genre rules), academic or legal writing (cohesion is required there), English text (corpus is Chinese commentary).
+
+## Workflow
+
+### Step 1 — Mechanical preflight (always run first)
 
 ```bash
-python engine/scanner.py <文章.md>          # 全规则扫描：AI命中分层+修法+Z分
-python pipelines/preflight.py <文章.md>     # 发文前判定：✅可发 / ⚠️改后复检 / ❌停下手术
+python scripts/preflight.py <article.md>
 ```
 
-## 铁律（压倒一切）
+Read the output:
+- **7/7 gates + Z < 0 → ✅ 可发**. Still run Step 2 before publishing.
+- **Gates failed → ❌ 停下手术**. Go to Step 3.
+- Z-score = confirmed-AI-rule hits − confirmed-human-rule hits. Positive means AI-side.
 
-1. **用户原话一字不改**（语录库标注的原话、认证句式，任何刀不碰）
-2. **指纹是生成器不是配额**——新文从口述骨架生成（起点38.5），不是AI稿修补（起点60-70）
-3. **目标是人类基线带不是0%**——用户手写实测李白54-72%；本地引擎≤35%即达标即停
-4. **刻意装毛刺无效且有害**（错字/零宽字符/装口语——朱雀实测装毛刺版仍77%）
-5. **单引擎单次读数不作数**；机械上限≈0.8，剩余靠人工判据
+The six hard gates: 冒号=0, 破折号=0, 直引号=0, 概念引用腔≤3/千字, 疑问句≤3/千字, 无小节标题. For the full-rule report with per-hit fixes, run `python scripts/scanner.py <article.md>`.
 
-## 工作流（严格按序）
+### Step 2 — Human judgment (regex cannot do these three)
 
-### 第一步：机械筛（必跑）
-`python pipelines/preflight.py <文章>`，六硬门+Z分：
-- 硬门：冒号=0｜破折号=0｜直引号=0｜概念引用腔≤3/千字｜疑问句≤3/千字｜无小节标题
-- Z分=Σ确认AI规则命中−Σ人味确认规则命中（r=0.813、LOO稳定；Z≥0即AI侧）
-- 人味弹药≥2类（直接引语/专名人物/真实地名/顶真/"实际上"——全部过CI的人味信号）
-- ❌停下手术 → 进第三步；✅可发 → 仍过第二步人工判据
+Check each 1,000–2,000-char block:
 
-### 第二步：人工判据（机器测不了的三条）
-1. **经历我 vs 姿态我**：块里的"我"是可核查的经历（"我学了二十多年市场营销"→0.0036）还是姿态（"你以为/我称之为"→0.998）？正则测不了，逐块人工判。
-2. **人是不是主体**：人只当引子、主体换概念数据流（z2桂林姑娘模式）照样0.997。人必须贯穿块。
-3. **论证对称排比**（"可以X却不能Y"×3）：正则覆盖不足（n=3），人工识别拆散；叙事重复排比（"降价了，降价了"）是人味，**不拆**。
+1. **Experiential-"I" vs performative-"I"** — "我已经学了二十多年市场营销" (real, checkable experience → human, measured 0.0036) vs "你以为你独立思考" / "我称之为" (pose → AI, measured 0.998).
+2. **Are people the subject?** — If concrete people only appear as an opening example and the body is concept/data reasoning, it still reads AI (measured 0.997) even with a named person in it.
+3. **Symmetrical argument triples** — "可以X，却不能Y" ×3. Colloquial repetition ("降价了，降价了") is human and must be kept; only the argument-symmetry kind gets broken.
 
-### 第2.5步：骨架检查（52片段全量精读新增，最高规律）
-**骨架-燃料定律**：亲历/真事做骨架→朱雀0.004-0.1；概念体系做骨架、真事当燃料→0.6-0.99（z12玛莎拉蒂0.75-0.99 vs z14县城0.09，同一作者同母题的铁证）。逐块问：这块的骨架是"谁在做什么"还是"一个概念在推演"？后者→重构骨架，不是修修补补。配套四条：
-- 真事必须**经历化**（过程/时间流逝/来回对话），不许三句讲完就"写照化"（z17有真领导对话仍0.98）
-- 案例要**独家**（朋友公司内幕0.26 vs 公开新闻复述0.84，z16同篇证明）
-- **"我"要做事不要说理**：论断串+亲历当插话=0.77（z0f3）；判断流推演具体产业链可以全程无我（z19砂糖橘0.046）
-- **恩格斯禁当盖章**（"恩格斯早就戳破了"三次实测均在0.99块）；要像z11写马钦那样写成有语境会修正的人
+### Step 3 — Seven-knife surgery (per 1,000–2,000-char block, in effect-size order)
 
-### 第三步：七刀手术（按块下刀，每块1000-2000字）
-刀序按实测效应量排：①冒号（最强+0.40）→②概念引用腔（>4/千字高危，实测AI均值0.93）→③数据罗列块（连续3+并列数据点拆进叙事）→④金句对称收尾（唯一要禁的排比变体）→⑤结构均匀（小节/等长段/两字词连排/段首连接词）→⑥轻词表（真雷才清，词表类规则981条覆盖不足说明堆词表无意义）→⑦**装人回填（治本刀）**：每块回填①可核查的我的经历②有名有姓的人+直接引语③编不出的细节（排到35个号/走廊30米），人为主体。手术细则与豁免见 references/方法论与证据链.md。
+1. 冒号 — strongest single AI signal (r=+0.43). Replace with commas or split sentences. Source-note sections exempt.
+2. 概念引用腔 — quoting your own jargon ("信息阶层") is a 5.5× AI habit. Keep ≤1 quoted term per article.
+3. 数据罗列 — three or more bare numbers in sequence get folded into events ("门票六百多，不到一双专项鞋的一半"). Numbers attached to people/actions are fine; bare number ladders are not.
+4. 金句对称收尾 — delete symmetrical aphorism endings ("不是坏账，是没人信"). Keep the judgment, drop the symmetry.
+5. 结构 — remove section headings, break uniform paragraph lengths, scatter enumeration chains.
+6. 轻词表 — only real hits; 90+ word-list rules failed validation on this corpus.
+7. **换骨架 (treats the cause)** — make lived experience / named people with direct quotes / un-inventable details the *skeleton* of each block, not decoration. This is the difference between 0.75 and 0.09 in the paired-sample test.
 
-### 第四步：复检判定
-重跑preflight至✅；发表前用户手测朱雀（matrix.tencent.com/ai-detect，按1000-2000字切块贴，块AIGC≤0.40安全）。
+After surgery, re-run Step 1 until ✅.
 
-## 已反转的旧常识（第三方skill还在教，别再犯）
+### Step 4 — Platform test
 
-| 旧规则 | 实测真相 |
-|---|---|
-| 排比是AI味要拆 | 叙事重复排比是人味（-0.37过CI）；只禁论证对称金句变体 |
-| 加口语词降分 | 口语锚中性（r=-0.07）；"你品你细品"在AI稿0.998 |
-| 删心理直陈 | 过时（-0.24，human块反而更多） |
-| 用第一人称显人味 | 姿态我/泛指你是AI重灾区（z4满篇"你以为"0.998） |
-| 堆AI黑话词表 | 词表类90+条在评论文体零确认——无效路线 |
+User pastes the final text into the Zhuque detector (matrix.tencent.com/ai-detect), manually split into 1,000–2,000-char chunks (never paste whole — auto-chunking merges theory into data blocks). Target: chunk AIGC ≤ 0.40.
 
-## 豁免（词表命中也不修，永远）
+## Output format
 
-说白了/这叫什么？这叫X/不是A是B随口直答（禁金句化不禁句式）/你要知道/其实/最后/本质上/基于/然后/第一第二（后五项口述原生，≤1/千字封顶）。**逗号连写是指纹不是病**（任何"合并短句/逗号>2即AI"规则无效）。段尾判断直收是用户文风（口述占62%）。恩格斯引文原样。信源备注区全豁免。完整清单见规则库 R_豁免用户指纹 分库。
+Report as:
 
-## 发布纪律（L2-L4，比文本层致命）
+```
+## 终检报告 — <文件名>
+Z分: <n>（AI确认<x> − 人味确认<y>）
+硬门: <p>/7（列出失败项）
+人味弹药: <n>类命中
+判定: ✅可发 / ⚠️改后复检 / ❌停下手术
+下一步: <具体到哪一块哪一刀>
+```
 
-篇篇结构变异（近十篇同构=账号级高危）/ 后台分段粘贴、单篇编辑≥30分钟 / 周发1-2篇 / 开头亮一手材料（L3免死金牌）/ 主动声明AI辅助可选（A/B测推荐量）。详见 references/方法论与证据链.md。
+## Iron rules
 
-## V8朱雀实测（2026-09-19，首份手术后实测）
+1. Never alter the author's own sentences (原话一字不改). The exemption list lives in `rules/R_豁免用户指纹.json` — 逗号连写, 段尾判断直收, 设问定义体 are *fingerprints*, not defects.
+2. Target is the human baseline band, not 0% — human writing itself scores 54–72% on proxy detectors. Once gates pass, stop.
+3. Performed imperfections (fake typos, inserted filler colloquialisms) do not work (measured 77% still-AI) and are forbidden.
+4. Never fabricate anchors. Facts, numbers, quotes and sources stay untouched.
 
-- V8整篇贴入，朱雀自切两段：**片段2（2973字占77.56%，含全部手术区与你原话）AIGC=0.1438人工特征区间**（对比V6同位置0.9+，加权≈0.27）；片段1（开头860字）0.7096——病根为数字密度（九组数字）+理论引入被切进同块，已出V8.1（扩张段砍至两锚点、凡勃伦改口语过渡）。
-- **规律17·数字挂事vs数字连排（实测分界）**：片段2账单段七个数字拿0.14（每个数挂事，门票对照鞋价/网友算账），片段1扩张段五个数字拿0.71（裸数字递进）。数字不怕多，怕不挂事。
-- **规律18·整篇贴朱雀会自切块且边界不受控**：凡勃伦理论段与数据段被切进同一块互相拖累。永远按1000-2000字手动切块贴，别整篇。
-- 13篇全量手术实战通病：副题金句全部存在（全删）；文章六/七同句开头（跨篇模板化，发布错开）。
+## Limits
 
-## 验证声明（本skill为何叫 validated）
+- 97% recall / 53% specificity: a quality gate, not a human-vs-AI classifier. Z<0 does not prove "human-written".
+- Mechanical ceiling ≈ 0.8 correlation; the remaining variance is exactly what Step 2 covers.
+- Corpus genre is Chinese self-media commentary. For other genres, re-run `python scripts/abtest.py` after adding labeled fragments to `validation/corpus/` (this re-scores all 1,108 rules automatically).
 
-- 1080条规则在52片段朱雀实测语料上A/B验证（95%CI），状态回写于规则库，全量证据 validation/results/abtest_results.json
-- 端到端考卷：文章一（朱雀0.93）Z=+2门3/7→❌拦下✓；文章二（朱雀0.91）Z=+1门3/7→❌拦下✓；文章十四V7（手术后）Z=−2门7/7→✅放行✓
-- Z分分类力：AI段(≥0.75) 26/30、human段(<0.5) 11/12；**只能抓AI不能证人工**
-- 语料更新流程：新朱雀报告OCR进 validation/corpus → 重跑 abtest → 全部规则状态自动重估
+## References
+
+Read on demand:
+
+- `references/方法论与证据链.md` — full methodology: skeleton–fuel law, the 16 close-reading rules, exemption rationale, publish discipline (account-level homogeneity, editing-behavior signals).
+- `references/评测报告.md` — validation report: classification power, cross-skill comparison, honest limits.
+- `references/ROADMAP.md` — project roadmap.
+- `rules/INDEX.json` — rule counts per library; each rule JSON carries `status` / `evidence` / `fix` / `exempt_when`.

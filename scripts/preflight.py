@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-"""pipelines/preflight.py —— 发文前一键快筛（去AI-Harness）。
-用法: python pipelines/preflight.py <文章.md>
+"""scripts/preflight.py —— 发文前一键快筛（anti-ai-foolish）。
+用法: python scripts/preflight.py <文章.md>
 流程: 剥信源 → 全规则扫描 → 硬门（冒号/破折号/直引号/概念引用腔/疑问句密度）→ Z分 → 人味弹药检查 → 判定 发/改/停。"""
 import os, sys, io, json, re
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(HERE, 'engine'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from scanner import scan, strip_body, kilo
 
 ALLOWED_EXT = ('.md', '.txt', '.markdown')
