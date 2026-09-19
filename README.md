@@ -54,32 +54,16 @@
 - 手术后稿件 → 门 7/7 放行 ✓，朱雀复测主体段落进入**人工特征区间**（AIGC 0.14）
 - 13 篇存量稿件全流程手术后全部通过机械门
 
-## 仓库内容：两个独立产物
+## 安装（纯 Skill）
 
-```
-anti-ai-foolish-skill/     ① 纯 Skill（标准 Agent Skill 格式）
-anti-ai-foolish-plugin/    ② ZCode 插件（.zcode-plugin + skills）
-marketplace.json           本地市场清单（指向②）
-```
-
-两者内容完全一致，按你的环境二选一。
-
-### ① 作为纯 Skill 安装（Claude Code / Codex / ZCode 等任何支持 Agent Skills 的工具）
-
-把 `anti-ai-foolish-skill/` 整个目录复制进你的技能目录并改名：
+标准 Agent Skill 格式，适用于 Claude Code / Codex / ZCode 等任何支持 Agent Skills 的工具。把本仓库 clone 或下载后，整个目录复制进你的技能目录：
 
 ```bash
+git clone https://github.com/forrestneo/anti-ai-foolish.git
 # ZCode
-cp -r anti-ai-foolish-skill ~/.zcode/skills/anti-ai-foolish
+cp -r anti-ai-foolish ~/.zcode/skills/anti-ai-foolish
 # Claude Code
-cp -r anti-ai-foolish-skill ~/.claude/skills/anti-ai-foolish
-```
-
-### ② 作为 ZCode 插件安装（本地市场）
-
-```
-Plugin Marketplace → Add → 粘贴本仓库根目录（含 marketplace.json）
-→ Personal → anti-ai-foolish → Install
+cp -r anti-ai-foolish ~/.claude/skills/anti-ai-foolish
 ```
 
 依赖：Python 3.8+，纯标准库 + RapidOCR（仅验证语料更新时需要）。规则引擎零依赖、离线运行、不上传任何文本。
@@ -102,17 +86,12 @@ python validation/abtest.py
 ## 项目结构
 
 ```
-anti-ai-foolish-skill/               # 纯 Skill（插件内为同名目录）
+anti-ai-foolish/                     # 仓库即 skill
 ├── SKILL.md                         # 四步工作流 + 铁律 + 已反转常识 + 验证声明
-├── engine/scanner.py                # 规则引擎（1108规则→扫描→Z分报告）
-├── pipelines/preflight.py           # 发文终检管线
+├── engine/ 与 pipelines/            # 规则引擎 + 发文终检管线
 ├── rules/                           # 13个规则分库（每条带status/evidence/fix/exempt）
 ├── validation/abtest.py             # 全量规则A/B重验框架（语料更新即重估）
 └── references/                      # 方法论、证据链、评测报告、路线图
-
-anti-ai-foolish-plugin/
-├── .zcode-plugin/plugin.json        # ZCode 插件清单
-└── skills/anti-ai-foolish/          # 同上，插件封装
 ```
 
 规则五态标注：`confirmed`（过CI的AI/人味信号）/ `reversed`（方向反转）/ `directional` / `no_signal` / `insufficient`——**没验证过的规则不冒充有效**。

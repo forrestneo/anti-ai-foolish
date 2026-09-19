@@ -54,32 +54,16 @@ What decides your score is not whose voice or which words — it's whether the s
 - Post-surgery drafts → 7/7 gates pass ✓, Zhuque re-test moves the body of the article into the **human-feature zone** (AIGC 0.14)
 - 13 legacy articles processed through the full pipeline, all passing mechanical gates
 
-## What's in this repo: two standalone artifacts
+## Install (plain skill)
 
-```
-anti-ai-foolish-skill/     ① Plain skill (standard Agent Skill format)
-anti-ai-foolish-plugin/    ② ZCode plugin (.zcode-plugin + skills)
-marketplace.json           local marketplace catalog (points to ②)
-```
-
-Identical content — pick whichever fits your environment.
-
-### ① Install as a plain skill (Claude Code / Codex / ZCode — anything that supports Agent Skills)
-
-Copy the `anti-ai-foolish-skill/` directory into your skills folder:
+Standard Agent Skill format — works with Claude Code / Codex / ZCode or anything that supports Agent Skills. Clone or download this repo, then copy the whole directory into your skills folder:
 
 ```bash
+git clone https://github.com/forrestneo/anti-ai-foolish.git
 # ZCode
-cp -r anti-ai-foolish-skill ~/.zcode/skills/anti-ai-foolish
+cp -r anti-ai-foolish ~/.zcode/skills/anti-ai-foolish
 # Claude Code
-cp -r anti-ai-foolish-skill ~/.claude/skills/anti-ai-foolish
-```
-
-### ② Install as a ZCode plugin (local marketplace)
-
-```
-Plugin Marketplace → Add → paste this repo root (contains marketplace.json)
-→ Personal → anti-ai-foolish → Install
+cp -r anti-ai-foolish ~/.claude/skills/anti-ai-foolish
 ```
 
 Requirements: Python 3.8+, standard library only (RapidOCR needed only when refreshing the validation corpus). The rule engine is dependency-free, fully offline, and uploads nothing.
@@ -102,17 +86,12 @@ Four-step workflow: ① mechanical preflight → ② human judgment (the three t
 ## Project layout
 
 ```
-anti-ai-foolish-skill/               # plain skill (same tree inside the plugin)
+anti-ai-foolish/                     # the repo IS the skill
 ├── SKILL.md                         # 4-step workflow + iron rules + disproved tips
-├── engine/scanner.py                # rule engine (1,108 rules → scan → Z-score)
-├── pipelines/preflight.py           # pre-publish gate
+├── engine/ & pipelines/             # rule engine + pre-publish gate
 ├── rules/                           # 13 rule libraries (status/evidence/fix/exempt)
 ├── validation/abtest.py             # full A/B re-validation framework
 └── references/                      # methodology, evidence chain, eval report, roadmap
-
-anti-ai-foolish-plugin/
-├── .zcode-plugin/plugin.json        # ZCode plugin manifest
-└── skills/anti-ai-foolish/          # same tree, plugin-wrapped
 ```
 
 Every rule carries one of five statuses: `confirmed` (CI-passed AI/human signal) / `reversed` / `directional` / `no_signal` / `insufficient` — **unverified rules are never passed off as effective**.
