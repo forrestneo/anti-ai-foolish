@@ -1,0 +1,9 @@
+{
+  "name": "anti-ai-foolish",
+  "version": "3.2.0",
+  "description": "unti-ai-trash——经朱雀实测语料验证的终极去AI味终检（1108规则A/B验证，召回97%，手术后文本实测进入人工区间）",
+  "author": {
+    "name": "w"
+  },
+  "skills": "./skills"
+}
