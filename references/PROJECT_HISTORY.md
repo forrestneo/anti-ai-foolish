@@ -1,11 +1,11 @@
-# 去AI-Harness 工程
+# 工程历史档案（原名：去AI-Harness 工程 → anti-ai-foolish）
 
 一个规则即数据、引擎即代码、语料即测试床的去AI味工程。**1108条规则，1080条已在52个朱雀实测片段上完成A/B验证并回写状态**。
 
 ## 架构
 
 ```
-去ai-harness/
+（原始目录结构记录，现仓库即skill本身）
 ├── engine/
 │   ├── harvest.py      # 从23个已装skill机器收割词表 → rules_pool.json（720唯一词条）
 │   ├── gen_rules.py    # 规则池+内置定义 → rules/ 分库（1108条）

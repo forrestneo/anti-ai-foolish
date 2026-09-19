@@ -78,7 +78,7 @@ def scan(text, use_exempt=True):
     }
 
 def render(rep, path):
-    out = [f"# 去AI-Harness 扫描报告 — {os.path.basename(path)}", '',
+    out = [f"# anti-ai-foolish 扫描报告 — {os.path.basename(path)}", '',
            f"正文 {rep['chars']} 字 | **Z分 = {rep['z_score']}**（AI确认{rep['z_components']['AI确认命中']} − 人味确认{rep['z_components']['人味确认命中']}；Z>0判AI侧，r=0.813）",
            f"AI向命中 {rep['AI_hit_total']} 条 | 人味命中 {len(rep['humane_hits'])} 条 | 结论：{rep['verdict']}", '']
     for sev, title in (('high', '高危（实测确认项优先处理）'), ('mid', '中危'), ('low', '低危/参考')):
